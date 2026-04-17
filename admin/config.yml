@@ -1,0 +1,36 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "projects"
+    label: "Portfolio Projects"
+    label_singular: "Project"
+    folder: "_data/projects"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: name
+    fields:
+      - { label: "Client / Project Name", name: "name", widget: "string", hint: "e.g. The Hair Loft" }
+      - { label: "Business Type", name: "type", widget: "string", hint: "e.g. Hair Salon" }
+      - { label: "Live Website URL", name: "url", widget: "string", hint: "https://theclientsite.com" }
+      - { label: "Project Description", name: "desc", widget: "text", hint: "Describe what you built and what it does for the client" }
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        hint: "Add each tag separately (Custom Design, Booking System, Gallery, etc.)"
+        field: { label: Tag, name: tag, widget: string }
+      - label: "Package Used"
+        name: "package"
+        widget: "select"
+        options: ["Seed Package", "Growth Package", "Expansion Package", "Custom Project"]
+        required: false
+      - label: "Display Order"
+        name: "order"
+        widget: "number"
+        default: 99
+        hint: "Lower numbers appear first. 1 = show first, 99 = show last"
