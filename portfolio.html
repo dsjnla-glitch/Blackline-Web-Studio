@@ -185,38 +185,81 @@ document.querySelectorAll(".reveal").forEach(function(el){obs.observe(el);});
 })();
 </script>
 <script>
-async function loadPortfolio(){
-  var container=document.getElementById("projects-container");
-  try{
-    var mRes=await fetch("/_data/projects/manifest.json");
-    var manifest=await mRes.json();
-    var results=await Promise.all(manifest.map(function(f){return fetch("/_data/projects/"+f).then(function(r){return r.json();});}));
-    var projects=results.sort(function(a,b){return (a.order||99)-(b.order||99);});
-    var cards=projects.map(function(p,i){
-      var tags=(p.tags||[]).map(function(t){return '<span class="tag">'+(typeof t==="object"?t.tag:t)+"</span>";}).join("");
-      return "<div class="project-card reveal"+(i%2===1?" reverse":"")+"">"
-        +"<div class="project-visual">"
-        +"<iframe src=""+p.url+"" title=""+p.name+"" scrolling="no" loading="lazy"></iframe>"
-        +"<div class="project-visual-overlay"></div>"
-        +"<a href=""+p.url+"" target="_blank" rel="noopener" class="project-visit">Visit Site &rarr;</a>"
-        +"</div>"
-        +"<div class="project-info">"
-        +"<div class="project-num">0"+(i+1)+"</div>"
-        +"<div class="project-type">"+(p.type||"Web Project")+"</div>"
-        +"<div class="project-name">"+p.name+"</div>"
-        +"<p class="project-desc">"+p.desc+"</p>"
-        +"<div class="project-tags">"+tags+"</div>"
-        +"<a href=""+p.url+"" target="_blank" rel="noopener" class="btn-primary">View Live Site &rarr;</a>"
-        +"</div></div>";
-    }).join("");
-    var coming="<div class="coming-soon reveal"><div class="cs-title">More Work on the Way</div><p class="cs-body">Every new project gets added here. If you want your business to be the next one featured — let's talk.</p><a href="about.html#contact" class="btn-primary">Start Your Project</a></div>";
-    container.innerHTML=cards+coming;
-    var obs2=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){x.target.classList.add("visible");obs2.unobserve(x.target);}});},{threshold:0.08});
-    document.querySelectorAll(".reveal").forEach(function(el){obs2.observe(el);});
-  }catch(err){
-    container.innerHTML="<div class="coming-soon"><div class="cs-title">Portfolio Loading...</div><p class="cs-body">Projects will appear here once the site is live.</p></div>";
+// Seed projects — always show these no matter what
+var SEED_PROJECTS = [
+  {
+    name: "Nomadic Needlework",
+    type: "Private Tattoo Studio",
+    url: "https://nomadicneedlework.com",
+    desc: "A fully custom website for a private tattoo studio — built to showcase artistry, establish credibility, and make booking effortless for clients. Designed from the ground up to reflect the studio's unique aesthetic.",
+    tags: ["Custom Design","Booking System","Gallery","Mobile Ready","Full Launch Setup"],
+    order: 1
   }
+];
+
+function renderCard(p, i) {
+  var tags = (p.tags||[]).map(function(t){
+    return '<span class="tag">' + (typeof t === "object" ? t.tag : t) + '</span>';
+  }).join("");
+  return (
+    '<div class="project-card reveal' + (i % 2 === 1 ? " reverse" : "") + '">' +
+    '<div class="project-visual">' +
+    '<iframe src="' + p.url + '" title="' + p.name + '" scrolling="no" loading="lazy"></iframe>' +
+    '<div class="project-visual-overlay"></div>' +
+    '<a href="' + p.url + '" target="_blank" rel="noopener" class="project-visit">Visit Site &rarr;</a>' +
+    '</div>' +
+    '<div class="project-info">' +
+    '<div class="project-num">0' + (i + 1) + '</div>' +
+    '<div class="project-type">' + (p.type || "Web Project") + '</div>' +
+    '<div class="project-name">' + p.name + '</div>' +
+    '<p class="project-desc">' + p.desc + '</p>' +
+    '<div class="project-tags">' + tags + '</div>' +
+    '<a href="' + p.url + '" target="_blank" rel="noopener" class="btn-primary">View Live Site &rarr;</a>' +
+    '</div></div>'
+  );
 }
+
+var COMING_SOON = (
+  '<div class="coming-soon reveal">' +
+  '<div class="cs-title">More Work on the Way</div>' +
+  '<p class="cs-body">Every new project gets added here. If you want your business to be the next one featured \u2014 let\'s talk.</p>' +
+  '<a href="about.html#contact" class="btn-primary">Start Your Project</a>' +
+  '</div>'
+);
+
+function attachObserver() {
+  var obs2 = new IntersectionObserver(function(e) {
+    e.forEach(function(x) {
+      if (x.isIntersecting) { x.target.classList.add("visible"); obs2.unobserve(x.target); }
+    });
+  }, {threshold: 0.08});
+  document.querySelectorAll(".reveal").forEach(function(el) { obs2.observe(el); });
+}
+
+async function loadPortfolio() {
+  var container = document.getElementById("projects-container");
+
+  // Always render seed projects first immediately
+  var allProjects = SEED_PROJECTS.slice();
+
+  try {
+    // Try to load any additional CMS projects
+    var mRes = await fetch("/_data/projects/manifest.json");
+    var manifest = await mRes.json();
+    var results = await Promise.all(
+      manifest.filter(function(f) { return f !== "nomadic-needlework.json"; })
+      .map(function(f) { return fetch("/_data/projects/" + f).then(function(r) { return r.json(); }); })
+    );
+    results.forEach(function(p) { allProjects.push(p); });
+    allProjects.sort(function(a,b) { return (a.order||99) - (b.order||99); });
+  } catch(e) {
+    // CMS fetch failed — that's fine, seed projects still show
+  }
+
+  container.innerHTML = allProjects.map(renderCard).join("") + COMING_SOON;
+  attachObserver();
+}
+
 loadPortfolio();
 </script>
 </body></html>
